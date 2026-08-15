@@ -1,0 +1,875 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Joguinhos da Isadora</title>
+<style>
+  :root{
+    --creme: #fdecd9;
+    --creme2: #fbdcc0;
+    --escuro: #201c30;
+    --escuro2: #29233a;
+    --rosa: #ff2f79;
+    --rosa-luz: #ff6fa5;
+    --amarelo: #ffc93c;
+    --azul: #35b6ff;
+    --verde: #5ed17a;
+    --texto: #3a3358;
+    --branco: #fffaf6;
+    --sombra: 0 10px 26px rgba(58,51,88,0.18);
+    font-family: -apple-system, "Segoe UI Rounded", "Segoe UI", Verdana, sans-serif;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; }
+  html,body{ margin:0; padding:0; height:100%; overflow-x:hidden; }
+  body{
+    background: linear-gradient(180deg, var(--creme), var(--creme2));
+    color: var(--texto);
+    min-height:100vh;
+  }
+  .screen{ display:none; min-height:100vh; flex-direction:column; }
+  .screen.active{ display:flex; }
+
+  /* ---------- Topbar comum ---------- */
+  .topbar{
+    display:flex; align-items:center; gap:10px;
+    padding: 16px 16px 6px;
+  }
+  .back-btn{
+    width:42px; height:42px; border-radius:14px; border:none;
+    background: var(--branco); box-shadow: 0 4px 0 rgba(58,51,88,0.14);
+    font-size:1.2rem; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; color: var(--texto);
+  }
+  .back-btn:active{ transform: translateY(2px); box-shadow:0 2px 0 rgba(58,51,88,0.14); }
+  .topbar h1{ font-size:1.05rem; margin:0; flex:1; text-align:center; padding-right:42px; }
+
+  /* ================= HUB ================= */
+  #hub .hub-header{ text-align:center; padding: 20px 16px 4px; }
+  #hub .hub-header h1{ font-size:1.4rem; margin:0 0 4px; }
+  #hub .hub-header p{ margin:0; font-size:0.85rem; opacity:0.75; }
+
+  .card-list{
+    display:flex; flex-direction:column; gap:22px;
+    padding: 18px 18px 40px;
+    max-width: 420px; width:100%; margin:0 auto;
+  }
+  .game-card{
+    position:relative; border-radius: 26px; overflow:hidden;
+    background: var(--escuro); box-shadow: var(--sombra);
+    padding: 18px 18px 16px; cursor:pointer;
+    border: 4px solid var(--branco);
+    transition: transform .12s ease;
+  }
+  .game-card:active{ transform: scale(0.97); }
+  .game-card h2{
+    margin:0 0 6px; font-size:1.15rem; letter-spacing:0.3px;
+    text-shadow: 0 2px 0 rgba(0,0,0,0.25);
+  }
+  .card-underline{ width:46px; height:4px; border-radius:4px; margin-bottom:10px; }
+  .card-star{
+    position:absolute; top:12px; right:12px; width:34px; height:34px;
+    background: var(--branco); border-radius:50%;
+    display:flex; align-items:center; justify-content:center; font-size:1.1rem;
+    box-shadow: 0 3px 0 rgba(58,51,88,0.14);
+  }
+  .card-badge{
+    position:absolute; left:14px; bottom:14px; z-index:3;
+    background: var(--azul); color:#fff; font-weight:800; font-size:0.68rem;
+    padding:6px 10px; border-radius: 10px; box-shadow: 0 3px 0 #1f8fd1;
+    line-height:1.15; text-align:center;
+  }
+  .card-preview{
+    height: 150px; border-radius: 16px; position:relative; overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  /* mini preview labirinto */
+  .prev-maze{ background:#242038; }
+  .prev-maze .mgrid{ display:grid; grid-template-columns:repeat(5,1fr); grid-template-rows:repeat(4,1fr); gap:4px; width:78%; height:78%; }
+  .prev-maze .mcell{ border-radius:5px; }
+  .prev-maze .pink{ background: var(--rosa); }
+  .prev-maze .gray{ background:#5a5570; }
+  .prev-maze .ball{
+    position:absolute; width:20px; height:20px; border-radius:50%;
+    background: radial-gradient(circle at 35% 35%, #fff, #ffd9a0 60%, #ff9d3f);
+    box-shadow: 0 0 14px 4px rgba(255,157,63,0.7);
+  }
+
+  /* mini preview porcas */
+  .prev-nuts{ background:#242038; gap:14px; }
+  .prev-nuts .bolt{ display:flex; flex-direction:column-reverse; align-items:center; gap:3px; }
+  .prev-nuts .post{ width:8px; height:70px; background:#8b8fa3; border-radius:4px; position:absolute; bottom:14px; }
+  .prev-nuts .stack{ display:flex; flex-direction:column-reverse; gap:3px; position:relative; z-index:2; }
+  .prev-nuts .nut{ width:34px; height:14px; border-radius:5px; box-shadow: inset 0 -2px 0 rgba(0,0,0,0.2); }
+
+  /* mini preview cobras */
+  .prev-snake{ background: radial-gradient(circle at 30% 20%, #241f3d, #120f22 75%); }
+  .prev-snake .worm{ font-size:64px; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.4)); }
+
+  /* ================= LABIRINTO ================= */
+  #game-maze .maze-wrap{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    padding: 6px 16px 20px;
+  }
+  #maze-info{ font-size:0.85rem; margin: 4px 0 10px; text-align:center; opacity:0.8; }
+  #mazeCanvas{
+    width: 100%; max-width: 380px; aspect-ratio: 1/1;
+    border-radius: 24px; box-shadow: var(--sombra); touch-action:none;
+    background:#211d33;
+  }
+  .maze-toast{
+    margin-top:14px; background:var(--branco); padding:10px 18px; border-radius:16px;
+    font-weight:800; box-shadow: var(--sombra); opacity:0; transform:scale(0.85);
+    transition: all .25s ease; pointer-events:none;
+  }
+  .maze-toast.show{ opacity:1; transform:scale(1); }
+
+  /* ================= PORCAS ================= */
+  #game-nuts .nuts-wrap{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding: 10px 14px 20px; gap:18px;
+  }
+  #pegsRow{
+    display:flex; gap:10px; justify-content:center; align-items:flex-end;
+    flex-wrap:wrap; max-width:420px;
+  }
+  .peg{
+    display:flex; flex-direction:column; align-items:center; cursor:pointer;
+    padding: 6px 4px 10px; border-radius:16px; transition: transform .12s ease, background .15s ease;
+  }
+  .peg.selected{ background: rgba(255,47,121,0.14); transform: translateY(-6px); }
+  .peg-post-wrap{
+    position:relative; width:52px; height:150px;
+    display:flex; flex-direction:column-reverse; align-items:center;
+  }
+  .peg-post{
+    position:absolute; bottom:0; left:50%; transform:translateX(-50%);
+    width:12px; height:130px; border-radius:6px;
+    background: linear-gradient(90deg,#9aa0b4,#c7ccdc 45%,#9aa0b4);
+  }
+  .peg-base{
+    width:56px; height:14px; border-radius:7px; margin-top:4px;
+    background: linear-gradient(180deg,#c7ccdc,#8a8fa3);
+  }
+  .nut-item{
+    position:relative; z-index:2; width:46px; height:20px; border-radius:7px;
+    box-shadow: inset 0 -3px 0 rgba(0,0,0,0.22), 0 2px 3px rgba(0,0,0,0.25);
+    margin-bottom:3px;
+  }
+  #nuts-controls{ display:flex; gap:10px; }
+  .btn-pill{
+    border:none; border-radius:14px; padding:11px 20px; font-weight:800; font-size:0.85rem;
+    background: var(--rosa); color:#fff; box-shadow: 0 4px 0 #c21f5c; cursor:pointer;
+  }
+  .btn-pill:active{ transform: translateY(3px); box-shadow:0 1px 0 #c21f5c; }
+  .btn-pill.secondary{ background: var(--branco); color:var(--texto); box-shadow: 0 4px 0 rgba(58,51,88,0.14); }
+  .btn-pill.secondary:active{ box-shadow: 0 1px 0 rgba(58,51,88,0.14); }
+
+  /* ================= COBRAS ================= */
+  #game-snake .snake-wrap{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
+    padding: 4px 16px 16px; position:relative;
+  }
+  #snake-score{ font-weight:800; margin-bottom:8px; }
+  #snakeCanvas{
+    width:100%; max-width:360px; aspect-ratio:1/1; border-radius:20px;
+    background: radial-gradient(circle at 30% 15%, #241f3d, #100d1e 80%);
+    box-shadow: var(--sombra);
+  }
+  .dpad{
+    display:grid; grid-template-columns:56px 56px 56px; grid-template-rows:56px 56px 56px;
+    gap:6px; margin-top:14px;
+  }
+  .dpad button{
+    border:none; border-radius:14px; background:var(--branco); font-size:1.3rem;
+    box-shadow: 0 4px 0 rgba(58,51,88,0.14); cursor:pointer; color:var(--texto);
+  }
+  .dpad button:active{ transform: translateY(2px); box-shadow:0 1px 0 rgba(58,51,88,0.14); }
+  .dpad .up{ grid-column:2; grid-row:1; }
+  .dpad .left{ grid-column:1; grid-row:2; }
+  .dpad .right{ grid-column:3; grid-row:2; }
+  .dpad .down{ grid-column:2; grid-row:3; }
+
+  .overlay{
+    position:absolute; inset:0; background:rgba(20,16,32,0.7);
+    display:none; align-items:center; justify-content:center; border-radius:20px;
+    flex-direction:column; gap:10px; color:#fff; text-align:center; padding:20px;
+  }
+  .overlay.show{ display:flex; }
+  .overlay h3{ margin:0; font-size:1.3rem; }
+</style>
+</head>
+<body>
+
+<!-- ===================== HUB ===================== -->
+<div class="screen active" id="hub">
+  <div class="hub-header">
+    <h1>🎮 Joguinhos da Isadora</h1>
+    <p>Escolhe um joguinho pra brincar!</p>
+  </div>
+  <div class="card-list">
+
+    <div class="game-card" data-game="maze" style="color:#ff5c9a;">
+      <div class="card-star">⭐</div>
+      <h2>PINTURA DE<br>LABIRINTO</h2>
+      <div class="card-underline" style="background:var(--rosa);"></div>
+      <div class="card-preview prev-maze">
+        <div class="mgrid" id="hubMazeGrid"></div>
+        <div class="ball" style="left:60%; top:55%;"></div>
+      </div>
+    </div>
+
+    <div class="game-card" data-game="nuts" style="color:#ff5c9a;">
+      <h2>PORCAS E<br>PARAFUSOS</h2>
+      <div class="card-underline" style="background:var(--rosa);"></div>
+      <div class="card-badge">MAIS<br>POPULAR!</div>
+      <div class="card-preview prev-nuts" style="justify-content:space-evenly;">
+        <div class="bolt"><div class="peg-post" style="position:relative;height:70px;width:8px;background:#8b8fa3;border-radius:4px;"></div>
+          <div class="stack" style="position:absolute; bottom:14px;">
+            <div class="nut" style="background:#5ed17a;"></div>
+          </div>
+        </div>
+        <div class="bolt"><div class="peg-post" style="position:relative;height:70px;width:8px;background:#8b8fa3;border-radius:4px;"></div>
+          <div class="stack" style="position:absolute; bottom:14px;">
+            <div class="nut" style="background:#ffc93c;"></div>
+            <div class="nut" style="background:#ffc93c;"></div>
+          </div>
+        </div>
+        <div class="bolt"><div class="peg-post" style="position:relative;height:70px;width:8px;background:#8b8fa3;border-radius:4px;"></div>
+          <div class="stack" style="position:absolute; bottom:14px;">
+            <div class="nut" style="background:#35b6ff;"></div>
+            <div class="nut" style="background:#ffc93c;"></div>
+            <div class="nut" style="background:#ff2f79;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="game-card" data-game="snake" style="color:var(--amarelo);">
+      <h2>COBRAS</h2>
+      <div class="card-underline" style="background:var(--amarelo);"></div>
+      <div class="card-preview prev-snake">
+        <div class="worm">🐍</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== LABIRINTO ===================== -->
+<div class="screen" id="game-maze">
+  <div class="topbar">
+    <button class="back-btn" data-back>←</button>
+    <h1>🧩 Pintura de Labirinto</h1>
+  </div>
+  <div class="maze-wrap">
+    <div id="maze-info">Arraste a bolinha pelo caminho rosa!</div>
+    <canvas id="mazeCanvas"></canvas>
+    <div class="maze-toast" id="mazeToast">Muito bem! ✨</div>
+  </div>
+</div>
+
+<!-- ===================== PORCAS E PARAFUSOS ===================== -->
+<div class="screen" id="game-nuts">
+  <div class="topbar">
+    <button class="back-btn" data-back>←</button>
+    <h1>🔩 Porcas e Parafusos</h1>
+  </div>
+  <div class="nuts-wrap">
+    <div id="nuts-info" style="font-size:0.85rem; opacity:0.8;">Toca num parafuso e depois no outro pra mover a porca!</div>
+    <div id="pegsRow"></div>
+    <div id="nuts-controls">
+      <button class="btn-pill secondary" id="nutsShuffle">🔀 Embaralhar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== COBRAS ===================== -->
+<div class="screen" id="game-snake">
+  <div class="topbar">
+    <button class="back-btn" data-back>←</button>
+    <h1>🐍 Cobras</h1>
+  </div>
+  <div class="snake-wrap">
+    <div id="snake-score">Pontos: 0</div>
+    <div style="position:relative; width:100%; max-width:360px;">
+      <canvas id="snakeCanvas"></canvas>
+      <div class="overlay" id="snakeOverlay">
+        <h3>Fim de jogo!</h3>
+        <p id="snakeFinalScore"></p>
+        <button class="btn-pill" id="snakeRestart">Jogar de novo</button>
+      </div>
+    </div>
+    <div class="dpad">
+      <button class="up" data-dir="up">⬆️</button>
+      <button class="left" data-dir="left">⬅️</button>
+      <button class="right" data-dir="right">➡️</button>
+      <button class="down" data-dir="down">⬇️</button>
+    </div>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   NAVEGAÇÃO ENTRE TELAS
+============================================================ */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+  document.getElementById(id).classList.add('active');
+  if(id === 'game-maze') startMaze();
+  else stopMaze();
+  if(id === 'game-nuts') startNuts();
+  if(id === 'game-snake') startSnake(); else stopSnake();
+}
+
+document.querySelectorAll('.game-card').forEach(function(card){
+  card.addEventListener('click', function(){
+    var g = card.getAttribute('data-game');
+    showScreen('game-' + g);
+  });
+});
+document.querySelectorAll('[data-back]').forEach(function(btn){
+  btn.addEventListener('click', function(){ showScreen('hub'); });
+});
+
+/* ============================================================
+   SOM "POP" (Web Audio, offline)
+============================================================ */
+var audioCtx;
+function playPop(freqStart, freqEnd){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    var t = audioCtx.currentTime;
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freqStart || 520, t);
+    osc.frequency.exponentialRampToValueAtTime(freqEnd || 880, t + 0.09);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.35, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t); osc.stop(t + 0.18);
+  }catch(e){}
+}
+function playBuzz(){
+  try{
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    var t = audioCtx.currentTime;
+    var osc = audioCtx.createOscillator();
+    var gain = audioCtx.createGain();
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(180, t);
+    osc.frequency.exponentialRampToValueAtTime(60, t + 0.35);
+    gain.gain.setValueAtTime(0.25, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.38);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t); osc.stop(t + 0.4);
+  }catch(e){}
+}
+
+/* ============================================================
+   MINI PREVIEW DO CARD (grade decorativa)
+============================================================ */
+(function buildHubPreview(){
+  var pattern = [
+    1,1,1,0,0,
+    0,0,1,0,0,
+    1,1,1,1,1,
+    1,0,0,0,1
+  ];
+  var wrap = document.getElementById('hubMazeGrid');
+  pattern.forEach(function(v){
+    var d = document.createElement('div');
+    d.className = 'mcell ' + (v ? 'pink' : 'gray');
+    wrap.appendChild(d);
+  });
+})();
+
+/* ============================================================
+   JOGO 1 — PINTURA DE LABIRINTO
+============================================================ */
+var mazeCanvas = document.getElementById('mazeCanvas');
+var mctx = mazeCanvas.getContext('2d');
+var mazeLevels = [
+  { rows:4, cols:4, path:[[0,0],[0,1],[0,2],[0,3],[1,3],[2,3],[2,2],[2,1],[2,0],[3,0],[3,1],[3,2],[3,3]] },
+  { rows:5, cols:5, path:[[0,0],[1,0],[1,1],[0,1],[0,2],[0,3],[1,3],[1,2],[2,2],[2,1],[2,0],[3,0],[4,0],[4,1],[4,2],[3,2],[3,3],[3,4],[2,4],[1,4],[0,4]] },
+  { rows:5, cols:4, path:[[0,1],[0,2],[1,2],[1,1],[1,0],[2,0],[3,0],[3,1],[2,1],[2,2],[2,3],[3,3],[4,3],[4,2],[4,1],[4,0]] }
+];
+var mazeLevelIndex = 0;
+var mazeState = null; // {rows, cols, path, pathMap, currentIndex, particles}
+var mazeActive = false;
+var mazeRafId = null;
+
+function keyOf(r,c){ return r + ',' + c; }
+
+function randomMazePath(rows, cols, targetLen){
+  var visited = {};
+  var startR = Math.floor(Math.random()*rows);
+  var startC = Math.floor(Math.random()*cols);
+  var path = [[startR,startC]];
+  visited[keyOf(startR,startC)] = true;
+  var dirs = [[0,1],[0,-1],[1,0],[-1,0]];
+  while(path.length < targetLen){
+    var last = path[path.length-1];
+    var options = [];
+    dirs.forEach(function(d){
+      var nr = last[0]+d[0], nc = last[1]+d[1];
+      if(nr>=0 && nr<rows && nc>=0 && nc<cols && !visited[keyOf(nr,nc)]) options.push([nr,nc]);
+    });
+    if(options.length === 0) break;
+    var pick = options[Math.floor(Math.random()*options.length)];
+    path.push(pick);
+    visited[keyOf(pick[0],pick[1])] = true;
+  }
+  return path;
+}
+
+function loadMazeLevel(){
+  var def;
+  if(mazeLevelIndex < mazeLevels.length){
+    def = mazeLevels[mazeLevelIndex];
+  } else {
+    var rows = 5 + (mazeLevelIndex % 3);
+    var cols = 5 + ((mazeLevelIndex+1) % 3);
+    var p = randomMazePath(rows, cols, Math.min(rows*cols, 14 + mazeLevelIndex));
+    if(p.length < 6) p = randomMazePath(rows, cols, 10);
+    def = { rows: rows, cols: cols, path: p };
+  }
+  var pathMap = {};
+  def.path.forEach(function(cell, i){ pathMap[keyOf(cell[0],cell[1])] = i; });
+  mazeState = {
+    rows: def.rows, cols: def.cols, path: def.path, pathMap: pathMap,
+    currentIndex: 0, particles: []
+  };
+  document.getElementById('maze-info').textContent = 'Arraste a bolinha pelo caminho rosa!';
+}
+
+function resizeMazeCanvas(){
+  var wrapW = mazeCanvas.clientWidth;
+  var dpr = window.devicePixelRatio || 1;
+  mazeCanvas.width = wrapW * dpr;
+  mazeCanvas.height = wrapW * dpr;
+  mctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+function cellRect(idx){
+  var cell = mazeState.path[idx];
+  var size = mazeCanvas.clientWidth;
+  var cw = size / mazeState.cols;
+  var ch = size / mazeState.rows;
+  return { x: cell[1]*cw, y: cell[0]*ch, w: cw, h: ch, cx: cell[1]*cw + cw/2, cy: cell[0]*ch + ch/2 };
+}
+
+function drawMaze(){
+  var size = mazeCanvas.clientWidth;
+  mctx.clearRect(0,0,size,size);
+  mctx.fillStyle = '#211d33';
+  mctx.fillRect(0,0,size,size);
+
+  var cw = size / mazeState.cols;
+  var ch = size / mazeState.rows;
+  var pad = Math.min(cw,ch) * 0.08;
+
+  for(var r=0;r<mazeState.rows;r++){
+    for(var c=0;c<mazeState.cols;c++){
+      var idx = mazeState.pathMap[keyOf(r,c)];
+      var isPath = idx !== undefined;
+      var x = c*cw, y = r*ch;
+      mctx.beginPath();
+      var rad = 7;
+      roundRectPath(mctx, x+pad, y+pad, cw-pad*2, ch-pad*2, rad);
+      if(isPath){
+        mctx.fillStyle = (idx <= mazeState.currentIndex) ? '#ff2f79' : '#ff85ae';
+      } else {
+        mctx.fillStyle = '#4c4864';
+      }
+      mctx.fill();
+    }
+  }
+
+  // estrela no final
+  var endRect = cellRect(mazeState.path.length-1);
+  mctx.font = (Math.min(cw,ch)*0.5) + 'px sans-serif';
+  mctx.textAlign = 'center'; mctx.textBaseline = 'middle';
+  mctx.globalAlpha = mazeState.currentIndex === mazeState.path.length-1 ? 1 : 0.55;
+  mctx.fillText('⭐', endRect.cx, endRect.cy);
+  mctx.globalAlpha = 1;
+
+  // particulas
+  mazeState.particles.forEach(function(p){
+    mctx.globalAlpha = Math.max(p.life,0);
+    mctx.fillStyle = '#fff3c4';
+    mctx.beginPath();
+    mctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+    mctx.fill();
+  });
+  mctx.globalAlpha = 1;
+
+  // bolinha
+  var br = cellRect(mazeState.currentIndex);
+  var ballR = Math.min(cw,ch) * 0.32;
+  var grad = mctx.createRadialGradient(br.cx-ballR*0.3, br.cy-ballR*0.3, ballR*0.1, br.cx, br.cy, ballR);
+  grad.addColorStop(0, '#fff');
+  grad.addColorStop(0.55, '#ffd9a0');
+  grad.addColorStop(1, '#ff9d3f');
+  mctx.fillStyle = grad;
+  mctx.beginPath();
+  mctx.arc(br.cx, br.cy, ballR, 0, Math.PI*2);
+  mctx.fill();
+}
+
+function roundRectPath(ctx, x, y, w, h, r){
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+function spawnParticles(idx){
+  var r = cellRect(idx);
+  for(var i=0;i<6;i++){
+    mazeState.particles.push({
+      x: r.cx, y: r.cy,
+      vx: (Math.random()-0.5)*1.6, vy: (Math.random()-0.5)*1.6,
+      r: 2 + Math.random()*2, life: 1
+    });
+  }
+}
+
+function mazeLoop(){
+  if(!mazeActive) return;
+  mazeState.particles.forEach(function(p){
+    p.x += p.vx; p.y += p.vy; p.life -= 0.03;
+  });
+  mazeState.particles = mazeState.particles.filter(function(p){ return p.life > 0; });
+  drawMaze();
+  mazeRafId = requestAnimationFrame(mazeLoop);
+}
+
+function mazeCellFromPoint(clientX, clientY){
+  var rect = mazeCanvas.getBoundingClientRect();
+  var size = rect.width;
+  var cw = size / mazeState.cols;
+  var ch = size / mazeState.rows;
+  var x = clientX - rect.left, y = clientY - rect.top;
+  var col = Math.floor(x/cw), row = Math.floor(y/ch);
+  return [row, col];
+}
+
+var mazeDragging = false;
+function handleMazePointer(clientX, clientY){
+  var cell = mazeCellFromPoint(clientX, clientY);
+  var idx = mazeState.pathMap[keyOf(cell[0], cell[1])];
+  if(idx === undefined) return;
+  if(idx === mazeState.currentIndex + 1){
+    mazeState.currentIndex = idx;
+    spawnParticles(idx);
+    if(idx === mazeState.path.length - 1){
+      mazeLevelComplete();
+    }
+  } else if(idx === mazeState.currentIndex - 1){
+    mazeState.currentIndex = idx;
+  }
+}
+
+mazeCanvas.addEventListener('pointerdown', function(e){
+  mazeDragging = true;
+  handleMazePointer(e.clientX, e.clientY);
+});
+mazeCanvas.addEventListener('pointermove', function(e){
+  if(!mazeDragging) return;
+  handleMazePointer(e.clientX, e.clientY);
+});
+window.addEventListener('pointerup', function(){ mazeDragging = false; });
+
+function mazeLevelComplete(){
+  playPop(660, 1040);
+  var toast = document.getElementById('mazeToast');
+  toast.textContent = 'Muito bem! ✨ Próxima fase...';
+  toast.classList.add('show');
+  document.getElementById('maze-info').textContent = 'Fase completa!';
+  setTimeout(function(){
+    toast.classList.remove('show');
+    mazeLevelIndex++;
+    loadMazeLevel();
+  }, 1300);
+}
+
+function startMaze(){
+  mazeActive = true;
+  if(!mazeState) loadMazeLevel();
+  resizeMazeCanvas();
+  mazeLoop();
+}
+function stopMaze(){
+  mazeActive = false;
+  if(mazeRafId) cancelAnimationFrame(mazeRafId);
+}
+window.addEventListener('resize', function(){ if(mazeActive) resizeMazeCanvas(); });
+
+/* ============================================================
+   JOGO 2 — PORCAS E PARAFUSOS
+============================================================ */
+var NUT_COLORS = ['#5ed17a', '#ffc93c', '#35b6ff', '#ff2f79'];
+var pegs = [];
+var pegCapacity = 4;
+var selectedPeg = null;
+
+function shuffleArray(arr){
+  for(var i=arr.length-1;i>0;i--){
+    var j = Math.floor(Math.random()*(i+1));
+    var tmp = arr[i]; arr[i]=arr[j]; arr[j]=tmp;
+  }
+  return arr;
+}
+
+function newNutsGame(){
+  var nuts = [];
+  NUT_COLORS.forEach(function(color){
+    for(var i=0;i<pegCapacity;i++) nuts.push(color);
+  });
+  shuffleArray(nuts);
+
+  pegs = [];
+  for(var p=0;p<NUT_COLORS.length;p++){
+    pegs.push(nuts.slice(p*pegCapacity, (p+1)*pegCapacity));
+  }
+  pegs.push([]); pegs.push([]);
+  // evita que já comece resolvido (bem improvável, mas garante)
+  var solved = pegs.every(function(peg){ return peg.length===0 || peg.every(function(n){ return n===peg[0]; }); });
+  if(solved) return newNutsGame();
+
+  selectedPeg = null;
+  renderNuts();
+}
+
+function renderNuts(){
+  var row = document.getElementById('pegsRow');
+  row.innerHTML = '';
+  pegs.forEach(function(peg, i){
+    var pegEl = document.createElement('div');
+    pegEl.className = 'peg' + (selectedPeg === i ? ' selected' : '');
+    var wrap = document.createElement('div');
+    wrap.className = 'peg-post-wrap';
+    var post = document.createElement('div');
+    post.className = 'peg-post';
+    wrap.appendChild(post);
+    peg.forEach(function(color){
+      var nutEl = document.createElement('div');
+      nutEl.className = 'nut-item';
+      nutEl.style.background = color;
+      wrap.appendChild(nutEl);
+    });
+    var base = document.createElement('div');
+    base.className = 'peg-base';
+    pegEl.appendChild(wrap);
+    pegEl.appendChild(base);
+    pegEl.addEventListener('click', function(){ onPegClick(i); });
+    row.appendChild(pegEl);
+  });
+}
+
+function onPegClick(i){
+  if(selectedPeg === null){
+    if(pegs[i].length === 0) return;
+    selectedPeg = i;
+    renderNuts();
+    return;
+  }
+  if(selectedPeg === i){
+    selectedPeg = null;
+    renderNuts();
+    return;
+  }
+  var src = pegs[selectedPeg], dst = pegs[i];
+  var canMove = src.length > 0 && dst.length < pegCapacity &&
+    (dst.length === 0 || dst[dst.length-1] === src[src.length-1]);
+  if(canMove){
+    dst.push(src.pop());
+    playPop(440, 660);
+    selectedPeg = null;
+    renderNuts();
+    checkNutsWin();
+  } else {
+    playBuzz();
+    selectedPeg = i;
+    if(pegs[i].length === 0) selectedPeg = null;
+    renderNuts();
+  }
+}
+
+function checkNutsWin(){
+  var win = pegs.every(function(peg){
+    return peg.length === 0 || peg.every(function(n){ return n === peg[0]; });
+  });
+  if(win){
+    setTimeout(function(){
+      playPop(660, 1040);
+      document.getElementById('nuts-info').textContent = 'Arrasou! Tudo organizado! 🎉 Toca em embaralhar pra jogar de novo.';
+    }, 200);
+  }
+}
+
+document.getElementById('nutsShuffle').addEventListener('click', function(){
+  document.getElementById('nuts-info').textContent = 'Toca num parafuso e depois no outro pra mover a porca!';
+  newNutsGame();
+});
+
+function startNuts(){
+  if(pegs.length === 0) newNutsGame();
+}
+
+/* ============================================================
+   JOGO 3 — COBRAS
+============================================================ */
+var snakeCanvas = document.getElementById('snakeCanvas');
+var sctx = snakeCanvas.getContext('2d');
+var SNAKE_COLS = 15, SNAKE_ROWS = 15;
+var snake, snakeDir, snakeNextDir, food, snakeScore, snakeTimer, snakeAlive;
+
+function resizeSnakeCanvas(){
+  var w = snakeCanvas.clientWidth;
+  var dpr = window.devicePixelRatio || 1;
+  snakeCanvas.width = w * dpr;
+  snakeCanvas.height = w * dpr;
+  sctx.setTransform(dpr,0,0,dpr,0,0);
+}
+
+function randomFreeCell(){
+  var occupied = {};
+  snake.forEach(function(s){ occupied[s.x+','+s.y] = true; });
+  var free = [];
+  for(var x=0;x<SNAKE_COLS;x++){
+    for(var y=0;y<SNAKE_ROWS;y++){
+      if(!occupied[x+','+y]) free.push({x:x,y:y});
+    }
+  }
+  return free[Math.floor(Math.random()*free.length)];
+}
+
+function resetSnake(){
+  snake = [{x:7,y:7},{x:6,y:7},{x:5,y:7}];
+  snakeDir = {x:1,y:0};
+  snakeNextDir = {x:1,y:0};
+  snakeScore = 0;
+  snakeAlive = true;
+  food = randomFreeCell();
+  document.getElementById('snake-score').textContent = 'Pontos: 0';
+  document.getElementById('snakeOverlay').classList.remove('show');
+}
+
+function drawSnake(){
+  var size = snakeCanvas.clientWidth;
+  var cw = size / SNAKE_COLS, ch = size / SNAKE_ROWS;
+  sctx.clearRect(0,0,size,size);
+
+  // comida
+  sctx.font = (Math.min(cw,ch)*0.8) + 'px sans-serif';
+  sctx.textAlign = 'center'; sctx.textBaseline = 'middle';
+  sctx.fillText('🍓', food.x*cw + cw/2, food.y*ch + ch/2);
+
+  snake.forEach(function(seg, i){
+    var hue = (i * 22) % 360;
+    sctx.fillStyle = 'hsl(' + hue + ',85%,60%)';
+    var x = seg.x*cw, y = seg.y*ch;
+    sctx.beginPath();
+    roundRectPath(sctx, x+2, y+2, cw-4, ch-4, 6);
+    sctx.fill();
+    if(i === 0){
+      sctx.fillStyle = '#fff';
+      var ex = seg.x*cw + cw*0.3, ey = seg.y*ch + ch*0.35;
+      sctx.beginPath(); sctx.arc(ex, ey, cw*0.09, 0, Math.PI*2); sctx.fill();
+      sctx.beginPath(); sctx.arc(seg.x*cw + cw*0.7, ey, cw*0.09, 0, Math.PI*2); sctx.fill();
+      sctx.fillStyle = '#221a33';
+      sctx.beginPath(); sctx.arc(ex, ey, cw*0.045, 0, Math.PI*2); sctx.fill();
+      sctx.beginPath(); sctx.arc(seg.x*cw + cw*0.7, ey, cw*0.045, 0, Math.PI*2); sctx.fill();
+    }
+  });
+}
+
+function snakeTick(){
+  if(!snakeAlive) return;
+  if((snakeNextDir.x !== -snakeDir.x) || (snakeNextDir.y !== -snakeDir.y)){
+    snakeDir = snakeNextDir;
+  }
+  var head = { x: snake[0].x + snakeDir.x, y: snake[0].y + snakeDir.y };
+
+  if(head.x < 0 || head.x >= SNAKE_COLS || head.y < 0 || head.y >= SNAKE_ROWS ||
+     snake.some(function(s){ return s.x===head.x && s.y===head.y; })){
+    snakeGameOver();
+    return;
+  }
+
+  snake.unshift(head);
+  if(head.x === food.x && head.y === food.y){
+    snakeScore++;
+    document.getElementById('snake-score').textContent = 'Pontos: ' + snakeScore;
+    playPop(500, 760);
+    food = randomFreeCell();
+  } else {
+    snake.pop();
+  }
+  drawSnake();
+}
+
+function snakeGameOver(){
+  snakeAlive = false;
+  playBuzz();
+  document.getElementById('snakeFinalScore').textContent = 'Você fez ' + snakeScore + ' pontos!';
+  document.getElementById('snakeOverlay').classList.add('show');
+}
+
+function setSnakeDir(dir){
+  if(dir === 'up') snakeNextDir = {x:0,y:-1};
+  if(dir === 'down') snakeNextDir = {x:0,y:1};
+  if(dir === 'left') snakeNextDir = {x:-1,y:0};
+  if(dir === 'right') snakeNextDir = {x:1,y:0};
+}
+document.querySelectorAll('.dpad button').forEach(function(btn){
+  btn.addEventListener('click', function(){ setSnakeDir(btn.getAttribute('data-dir')); });
+});
+document.addEventListener('keydown', function(e){
+  var map = {ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right'};
+  if(map[e.key]) setSnakeDir(map[e.key]);
+});
+var touchStartX=0, touchStartY=0;
+snakeCanvas.addEventListener('touchstart', function(e){
+  touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY;
+}, {passive:true});
+snakeCanvas.addEventListener('touchend', function(e){
+  var dx = e.changedTouches[0].clientX - touchStartX;
+  var dy = e.changedTouches[0].clientY - touchStartY;
+  if(Math.abs(dx) > Math.abs(dy)){
+    setSnakeDir(dx > 0 ? 'right' : 'left');
+  } else {
+    setSnakeDir(dy > 0 ? 'down' : 'up');
+  }
+}, {passive:true});
+
+document.getElementById('snakeRestart').addEventListener('click', function(){
+  resetSnake();
+  drawSnake();
+});
+
+function startSnake(){
+  resizeSnakeCanvas();
+  resetSnake();
+  drawSnake();
+  if(snakeTimer) clearInterval(snakeTimer);
+  snakeTimer = setInterval(snakeTick, 170);
+}
+function stopSnake(){
+  if(snakeTimer) clearInterval(snakeTimer);
+}
+window.addEventListener('resize', function(){
+  if(document.getElementById('game-snake').classList.contains('active')) resizeSnakeCanvas();
+});
+</script>
+</body>
+</html>
