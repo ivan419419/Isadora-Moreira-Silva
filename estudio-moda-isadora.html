@@ -38,11 +38,11 @@
   .icon-btn:active{transform:translateY(2px); box-shadow:0 2px 0 rgba(58,51,88,0.12);}
 
   .doll-tabs{
-    display:flex; gap:8px; width:100%; max-width:480px; padding:2px 16px 10px;
-    justify-content:center;
+    display:flex; gap:6px; width:100%; max-width:480px; padding:2px 12px 10px;
+    justify-content:center; flex-wrap:wrap;
   }
   .doll-tab{
-    border:none; border-radius:999px; padding:7px 14px; font-weight:800; font-size:0.85rem;
+    border:none; border-radius:999px; padding:7px 11px; font-weight:800; font-size:0.78rem;
     background:var(--card); color:var(--ink); box-shadow:0 3px 0 rgba(58,51,88,0.10); cursor:pointer;
   }
   .doll-tab.active{ background:var(--pink); color:#fff; box-shadow:0 3px 0 var(--pink-dark); }
@@ -59,6 +59,7 @@
     border-radius:50%;
   }
   #dollSvg{ width:78%; height:92%; filter:drop-shadow(0 10px 14px rgba(58,51,88,0.18)); position:relative; z-index:2; }
+  #sceneSvg{ border-radius:18px; overflow:hidden; }
 
   .dice-btn{
     position:absolute; top:0; right:6%; z-index:3;
@@ -121,6 +122,15 @@
   .modal-btns button{ flex:1; padding:10px; border-radius:12px; border:none; font-weight:800; cursor:pointer; }
   .btn-yes{ background:var(--pink); color:#fff; }
   .btn-no{ background:#eee; color:#555; }
+
+  /* Faz as formas da boneca usarem a cor escolhida (sem isso, ficam pretas por padrão) */
+  #skinArt, #outfitArt, #hairArt, #lips, #blush, #eyeshadow{ fill: currentColor; }
+
+  @keyframes sparkle{
+    0%,100%{ opacity:0.35; transform:scale(0.9); }
+    50%{ opacity:1; transform:scale(1.15); }
+  }
+  .crown-sparkle{ animation: sparkle 1.6s ease-in-out infinite; transform-origin:center; }
 </style>
 </head>
 <body>
@@ -134,6 +144,33 @@
 <div class="doll-tabs" id="dollTabs"></div>
 
 <div class="stage">
+  <svg id="sceneSvg" viewBox="0 0 240 340" xmlns="http://www.w3.org/2000/svg" style="position:absolute; inset:0; width:100%; height:100%; display:none; z-index:1;">
+    <!-- Cenário de castelo, igual à cadeirinha rosa da Sofia -->
+    <rect x="0" y="0" width="240" height="340" fill="#ffd9e6"></rect>
+    <rect x="0" y="230" width="240" height="110" fill="#2f2a45"></rect>
+    <g fill="#ffc4dc">
+      <rect x="30" y="90" width="40" height="150" rx="4"></rect>
+      <polygon points="30,90 50,60 70,90"></polygon>
+      <rect x="170" y="90" width="40" height="150" rx="4"></rect>
+      <polygon points="170,90 190,60 210,90"></polygon>
+      <rect x="90" y="55" width="60" height="185" rx="4"></rect>
+      <polygon points="90,55 120,20 150,55"></polygon>
+      <circle cx="120" cy="26" r="4" fill="#ffe1ec"></circle>
+    </g>
+    <g fill="#fff6fa">
+      <circle cx="50" cy="130" r="6"></circle>
+      <circle cx="190" cy="130" r="6"></circle>
+      <rect x="110" y="150" width="20" height="26" rx="10"></rect>
+    </g>
+    <!-- cadeirinha rosa -->
+    <g fill="#ff2e93">
+      <rect x="85" y="235" width="70" height="12" rx="6"></rect>
+      <rect x="80" y="245" width="10" height="70" rx="5"></rect>
+      <rect x="150" y="245" width="10" height="70" rx="5"></rect>
+      <path d="M78,235 Q70,235 70,255 L70,275 Q70,283 78,283 L88,283 L88,235 Z"></path>
+      <path d="M162,235 Q170,235 170,255 L170,275 Q170,283 162,283 L152,283 L152,235 Z"></path>
+    </g>
+  </svg>
   <div class="spotlight"></div>
   <button class="dice-btn" id="diceBtn">🎲 Sortear</button>
   <svg id="dollSvg" viewBox="0 0 240 340" xmlns="http://www.w3.org/2000/svg">
@@ -227,6 +264,11 @@
       </g>
       <g id="acc-coroa" style="display:none">
         <path d="M95,26 L102,9 L112,22 L120,4 L128,22 L138,9 L145,26 Z" fill="#ffd166" stroke="#e8ac2e" stroke-width="1.5"></path>
+        <circle class="crown-sparkle" cx="120" cy="10" r="2.2" fill="#fff8e1"></circle>
+      </g>
+      <g id="acc-faixa" style="display:none">
+        <rect x="88" y="150" width="64" height="11" rx="5.5" fill="#ffd166" stroke="#e8ac2e" stroke-width="1.5"></rect>
+        <path d="M120,150 L124,156 L120,161 L116,156 Z" fill="#e8ac2e"></path>
       </g>
     </g>
   </svg>
@@ -240,7 +282,7 @@
 <div class="modal-bg" id="resetModal">
   <div class="modal">
     <h2>Recomeçar os visuais?</h2>
-    <p>Isso vai apagar as roupas, cabelos e maquiagens das 3 bonecas.</p>
+    <p>Isso vai apagar as roupas, cabelos e maquiagens das 4 bonecas.</p>
     <div class="modal-btns">
       <button class="btn-no" id="cancelReset">Cancelar</button>
       <button class="btn-yes" id="confirmReset">Recomeçar</button>
@@ -256,7 +298,7 @@
 
   var SKIN_TONES = ["#ffe0bd","#f8c99c","#e0ac69","#c68642","#8d5524"];
   var HAIR_COLORS = ["#2b1c12","#000000","#7a4a2a","#d9a441","#e8a0c4","#8b5fbf","#4fc3f7","#e05656"];
-  var OUTFIT_COLORS = ["#ff8fa3","#ffd166","#8fe3b0","#4fc3f7","#9b6eff","#ff7ec7","#54d67b","#ffa552"];
+  var OUTFIT_COLORS = ["#ff8fa3","#ffd166","#8fe3b0","#4fc3f7","#9b6eff","#ff7ec7","#54d67b","#ffa552","#b3132b"];
   var LIP_COLORS = ["transparent","#e2707a","#c0392b","#ff6f91","#a4508b"];
   var BLUSH_COLORS = ["transparent","#ffb3ba","#ff8fa3","#ffd6cc"];
   var SHADOW_COLORS = ["transparent","#a4508b","#8fd3f4","#c9a0ff","#ffb3ba"];
@@ -276,8 +318,10 @@
     {id:"laco", label:"🎀 Laço"},
     {id:"oculos", label:"🕶️ Óculos"},
     {id:"brincos", label:"💎 Brincos"},
-    {id:"coroa", label:"👑 Coroa"}
+    {id:"coroa", label:"👑 Coroa"},
+    {id:"faixa", label:"✨ Faixa dourada"}
   ];
+  var ACC_IDS = ["laco","oculos","brincos","coroa","faixa"];
 
   var CATEGORIES = [
     {id:"pele", icon:"🧑", label:"Pele"},
@@ -287,19 +331,22 @@
     {id:"acessorios", icon:"✨", label:"Extras"}
   ];
 
+  var DOLL_NAMES = ["Boneca 1", "Boneca 2", "Boneca 3", "Sofia"];
+
   function defaultDoll(i){
     var presets = [
-      {skin:SKIN_TONES[0], hair:"chiquinha", hairColor:HAIR_COLORS[3], outfit:"vestido", outfitColor:OUTFIT_COLORS[0], lip:LIP_COLORS[1], blush:BLUSH_COLORS[1], shadow:SHADOW_COLORS[0]},
-      {skin:SKIN_TONES[2], hair:"cacheado", hairColor:HAIR_COLORS[0], outfit:"macacao", outfitColor:OUTFIT_COLORS[3], lip:LIP_COLORS[0], blush:BLUSH_COLORS[0], shadow:SHADOW_COLORS[0]},
-      {skin:SKIN_TONES[3], hair:"rabo", hairColor:HAIR_COLORS[2], outfit:"longo", outfitColor:OUTFIT_COLORS[4], lip:LIP_COLORS[3], blush:BLUSH_COLORS[2], shadow:SHADOW_COLORS[3]}
+      {skin:SKIN_TONES[0], hair:"chiquinha", hairColor:HAIR_COLORS[3], outfit:"vestido", outfitColor:OUTFIT_COLORS[0], lip:LIP_COLORS[1], blush:BLUSH_COLORS[1], shadow:SHADOW_COLORS[0], acc:{laco:false, oculos:false, brincos:false, coroa:false, faixa:false}},
+      {skin:SKIN_TONES[2], hair:"cacheado", hairColor:HAIR_COLORS[0], outfit:"macacao", outfitColor:OUTFIT_COLORS[3], lip:LIP_COLORS[0], blush:BLUSH_COLORS[0], shadow:SHADOW_COLORS[0], acc:{laco:false, oculos:false, brincos:false, coroa:false, faixa:false}},
+      {skin:SKIN_TONES[3], hair:"rabo", hairColor:HAIR_COLORS[2], outfit:"longo", outfitColor:OUTFIT_COLORS[4], lip:LIP_COLORS[3], blush:BLUSH_COLORS[2], shadow:SHADOW_COLORS[3], acc:{laco:false, oculos:false, brincos:false, coroa:false, faixa:false}},
+      // Inspirada na boneca real da Isadora: vestido vermelho, faixa e coroa douradas
+      {skin:SKIN_TONES[0], hair:"liso", hairColor:HAIR_COLORS[3], outfit:"longo", outfitColor:OUTFIT_COLORS[8], lip:LIP_COLORS[2], blush:BLUSH_COLORS[1], shadow:SHADOW_COLORS[0], acc:{laco:false, oculos:false, brincos:true, coroa:true, faixa:true}}
     ];
     var base = presets[i % presets.length];
-    var acc = {laco:false, oculos:false, brincos:false, coroa:false};
-    return Object.assign({}, base, {acc:acc});
+    return Object.assign({}, base, {acc: Object.assign({}, base.acc)});
   }
 
   function freshState(){
-    return { active:0, dolls:[defaultDoll(0), defaultDoll(1), defaultDoll(2)] };
+    return { active:0, dolls:[defaultDoll(0), defaultDoll(1), defaultDoll(2), defaultDoll(3)] };
   }
 
   function load(){
@@ -307,7 +354,8 @@
       var raw = localStorage.getItem(SAVE_KEY);
       if (!raw) return freshState();
       var s = JSON.parse(raw);
-      if (!s.dolls || s.dolls.length !== 3) return freshState();
+      if (!s.dolls || s.dolls.length !== 4) return freshState();
+      s.dolls.forEach(function(d){ if (d.acc.faixa === undefined) d.acc.faixa = false; });
       return s;
     }catch(e){ return freshState(); }
   }
@@ -338,19 +386,21 @@
     setColor("eyeshadow", d.shadow);
     showOnly("hair-group", "hair-" + d.hair);
     showOnly("outfit-group", "outfit-" + d.outfit);
-    ["laco","oculos","brincos","coroa"].forEach(function(a){
+    ACC_IDS.forEach(function(a){
       document.getElementById("acc-" + a).style.display = d.acc[a] ? "" : "none";
     });
+    // Cenário de castelo aparece só na cadeirinha da Sofia
+    document.getElementById("sceneSvg").style.display = (state.active === 3) ? "" : "none";
   }
 
   // ---------- doll tabs ----------
   var dollTabsEl = document.getElementById("dollTabs");
   function renderDollTabs(){
     dollTabsEl.innerHTML = "";
-    for (var i=0;i<3;i++){
+    for (var i=0;i<4;i++){
       var btn = document.createElement("button");
       btn.className = "doll-tab" + (i === state.active ? " active" : "");
-      btn.textContent = "Boneca " + (i+1);
+      btn.textContent = DOLL_NAMES[i];
       (function(idx){
         btn.addEventListener("click", function(){
           state.active = idx;
@@ -495,7 +545,7 @@
     d.lip = pick(LIP_COLORS);
     d.blush = pick(BLUSH_COLORS);
     d.shadow = pick(SHADOW_COLORS);
-    ["laco","oculos","brincos","coroa"].forEach(function(a){ d.acc[a] = Math.random() > 0.5; });
+    ACC_IDS.forEach(function(a){ d.acc[a] = Math.random() > 0.5; });
     save(); renderDoll(); renderOptions();
   });
 
