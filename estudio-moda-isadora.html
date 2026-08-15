@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Estúdio de Moda da Isadora</title>
+<style>
+  :root{
+    --bg-a:#fff1f5;
+    --bg-b:#f3e8ff;
+    --ink:#3a3358;
+    --gold:#ffd166;
+    --gold-dark:#e8ac2e;
+    --pink:#ff8fa3;
+    --pink-dark:#e56b82;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none;}
+  html,body{height:100%; margin:0;}
+  body{
+    font-family:-apple-system,"Segoe UI Rounded","Segoe UI",Verdana,sans-serif;
+    background:linear-gradient(160deg, var(--bg-a), var(--bg-b) 70%);
+    color:var(--ink);
+    min-height:100vh;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .topbar{
+    width:100%; max-width:480px;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 16px 4px;
+  }
+  h1{ font-size:1.15rem; margin:0; text-align:center; flex:1; }
+  .icon-btn{
+    width:40px;height:40px;border-radius:12px; border:none;
+    background:var(--card); box-shadow:0 4px 0 rgba(58,51,88,0.12);
+    font-size:1.15rem; display:flex; align-items:center; justify-content:center; cursor:pointer;
+  }
+  .icon-btn:active{transform:translateY(2px); box-shadow:0 2px 0 rgba(58,51,88,0.12);}
+
+  .doll-tabs{
+    display:flex; gap:8px; width:100%; max-width:480px; padding:2px 16px 10px;
+    justify-content:center;
+  }
+  .doll-tab{
+    border:none; border-radius:999px; padding:7px 14px; font-weight:800; font-size:0.85rem;
+    background:var(--card); color:var(--ink); box-shadow:0 3px 0 rgba(58,51,88,0.10); cursor:pointer;
+  }
+  .doll-tab.active{ background:var(--pink); color:#fff; box-shadow:0 3px 0 var(--pink-dark); }
+
+  .stage{
+    position:relative;
+    width:100%; max-width:340px; aspect-ratio: 3/4;
+    display:flex; align-items:center; justify-content:center;
+    margin:4px auto 6px;
+  }
+  .spotlight{
+    position:absolute; bottom:6%; width:78%; height:22%;
+    background:radial-gradient(ellipse at center, rgba(255,209,102,0.55), rgba(255,209,102,0) 70%);
+    border-radius:50%;
+  }
+  #dollSvg{ width:78%; height:92%; filter:drop-shadow(0 10px 14px rgba(58,51,88,0.18)); position:relative; z-index:2; }
+
+  .dice-btn{
+    position:absolute; top:0; right:6%; z-index:3;
+    background:var(--gold); border:none; border-radius:999px;
+    padding:8px 12px; font-weight:800; font-size:0.8rem;
+    box-shadow:0 4px 0 var(--gold-dark); cursor:pointer;
+    display:flex; align-items:center; gap:4px;
+  }
+  .dice-btn:active{ transform:translateY(2px); box-shadow:0 2px 0 var(--gold-dark); }
+
+  .cat-tabs{
+    display:flex; width:100%; max-width:480px; padding:6px 12px; gap:6px;
+  }
+  .cat-tab{
+    flex:1; border:none; border-radius:14px; padding:8px 2px; background:var(--card);
+    font-size:1.3rem; box-shadow:0 3px 0 rgba(58,51,88,0.10); cursor:pointer; position:relative;
+  }
+  .cat-tab.active{ background:var(--pink); box-shadow:0 3px 0 var(--pink-dark); }
+  .cat-tab .lbl{ display:block; font-size:0.6rem; font-weight:800; margin-top:2px; }
+
+  .options-panel{
+    width:100%; max-width:480px; background:var(--card); border-radius:20px 20px 0 0;
+    margin-top:auto; padding:14px 14px 26px; box-shadow:0 -4px 14px rgba(58,51,88,0.10);
+    min-height:150px;
+  }
+  .opt-label{ font-size:0.7rem; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#8a7fb0; margin:8px 2px 6px; }
+  .opt-row{ display:flex; gap:10px; overflow-x:auto; padding:2px; scrollbar-width:none; }
+  .opt-row::-webkit-scrollbar{ display:none; }
+
+  .style-btn{
+    flex:0 0 auto; border:none; border-radius:14px; padding:9px 14px; background:#f4f0ff;
+    font-weight:800; font-size:0.8rem; color:var(--ink); box-shadow:0 3px 0 #ded4f7; cursor:pointer;
+    white-space:nowrap;
+  }
+  .style-btn.active{ background:var(--pink); color:#fff; box-shadow:0 3px 0 var(--pink-dark); }
+
+  .swatch{
+    flex:0 0 auto; width:38px; height:38px; border-radius:50%;
+    border:3px solid #fff; box-shadow:0 0 0 2px #e5ddfa, 0 3px 0 rgba(58,51,88,0.10);
+    cursor:pointer; position:relative;
+  }
+  .swatch.active{ box-shadow:0 0 0 3px var(--ink), 0 3px 0 rgba(58,51,88,0.10); }
+  .swatch.none-swatch{ background:#fff !important; }
+  .swatch.none-swatch::after{
+    content:""; position:absolute; inset:6px; background:
+      linear-gradient(45deg, transparent 46%, #e56b82 48%, #e56b82 52%, transparent 54%);
+  }
+
+  footer{ font-size:0.65rem; color:#9c92bd; padding:6px 0 10px; text-align:center; }
+
+  .modal-bg{
+    position:fixed; inset:0; background:rgba(58,51,88,0.45);
+    display:none; align-items:center; justify-content:center; z-index:100; padding:20px;
+  }
+  .modal-bg.show{ display:flex; }
+  .modal{ background:#fff; border-radius:20px; padding:22px; max-width:320px; width:100%; text-align:center; }
+  .modal h2{ margin-top:0; font-size:1.1rem; }
+  .modal p{ font-size:0.9rem; color:#5a4f78; }
+  .modal-btns{ display:flex; gap:10px; margin-top:14px; }
+  .modal-btns button{ flex:1; padding:10px; border-radius:12px; border:none; font-weight:800; cursor:pointer; }
+  .btn-yes{ background:var(--pink); color:#fff; }
+  .btn-no{ background:#eee; color:#555; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div style="width:40px;"></div>
+  <h1>💄 Estúdio de Moda da Isadora</h1>
+  <button class="icon-btn" id="settingsBtn">⚙️</button>
+</div>
+
+<div class="doll-tabs" id="dollTabs"></div>
+
+<div class="stage">
+  <div class="spotlight"></div>
+  <button class="dice-btn" id="diceBtn">🎲 Sortear</button>
+  <svg id="dollSvg" viewBox="0 0 240 340" xmlns="http://www.w3.org/2000/svg">
+
+    <g id="skinArt">
+      <ellipse cx="108" cy="322" rx="14" ry="7" fill="#3a3358"></ellipse>
+      <ellipse cx="132" cy="322" rx="14" ry="7" fill="#3a3358"></ellipse>
+      <rect x="98" y="230" width="20" height="90" rx="9"></rect>
+      <rect x="122" y="230" width="20" height="90" rx="9"></rect>
+      <rect x="55" y="120" width="16" height="80" rx="8" transform="rotate(-8 63 160)"></rect>
+      <rect x="169" y="120" width="16" height="80" rx="8" transform="rotate(8 177 160)"></rect>
+      <circle cx="60" cy="205" r="9"></circle>
+      <circle cx="180" cy="205" r="9"></circle>
+      <rect x="108" y="100" width="24" height="18" rx="6"></rect>
+      <circle cx="120" cy="70" r="38"></circle>
+    </g>
+
+    <g id="outfitArt">
+      <g id="outfit-vestido" class="outfit-group" style="display:none">
+        <ellipse cx="90" cy="112" rx="14" ry="10"></ellipse>
+        <ellipse cx="150" cy="112" rx="14" ry="10"></ellipse>
+        <path d="M95,102 L145,102 L160,235 Q120,248 80,235 Z"></path>
+      </g>
+      <g id="outfit-longo" class="outfit-group" style="display:none">
+        <ellipse cx="90" cy="112" rx="14" ry="10"></ellipse>
+        <ellipse cx="150" cy="112" rx="14" ry="10"></ellipse>
+        <path d="M95,102 L145,102 L170,305 Q120,318 70,305 Z"></path>
+      </g>
+      <g id="outfit-macacao" class="outfit-group" style="display:none">
+        <ellipse cx="90" cy="112" rx="14" ry="10"></ellipse>
+        <ellipse cx="150" cy="112" rx="14" ry="10"></ellipse>
+        <path d="M95,102 L145,102 L158,210 Q120,222 82,210 Z"></path>
+      </g>
+    </g>
+
+    <g id="hairArt">
+      <g id="hair-liso" class="hair-group" style="display:none">
+        <path d="M82,45 Q120,15 158,45 Q162,80 150,105 Q120,118 90,105 Q78,80 82,45 Z"></path>
+      </g>
+      <g id="hair-chiquinha" class="hair-group" style="display:none">
+        <path d="M85,42 Q120,18 155,42 Q158,68 150,85 Q120,95 90,85 Q82,68 85,42 Z"></path>
+        <circle cx="68" cy="78" r="17"></circle>
+        <circle cx="172" cy="78" r="17"></circle>
+      </g>
+      <g id="hair-rabo" class="hair-group" style="display:none">
+        <path d="M85,42 Q120,18 155,42 Q158,68 150,85 Q120,95 90,85 Q82,68 85,42 Z"></path>
+        <ellipse cx="178" cy="95" rx="13" ry="34" transform="rotate(20 178 95)"></ellipse>
+      </g>
+      <g id="hair-cacheado" class="hair-group" style="display:none">
+        <circle cx="90" cy="38" r="19"></circle>
+        <circle cx="120" cy="26" r="21"></circle>
+        <circle cx="150" cy="38" r="19"></circle>
+        <circle cx="72" cy="62" r="17"></circle>
+        <circle cx="168" cy="62" r="17"></circle>
+        <circle cx="120" cy="55" r="20"></circle>
+      </g>
+    </g>
+
+    <g id="faceArt">
+      <path d="M92,55 Q100,49 108,54" stroke="#3a3358" stroke-width="3" fill="none" stroke-linecap="round"></path>
+      <path d="M132,54 Q140,49 148,55" stroke="#3a3358" stroke-width="3" fill="none" stroke-linecap="round"></path>
+      <g id="eyeshadow">
+        <ellipse cx="100" cy="61" rx="8" ry="4"></ellipse>
+        <ellipse cx="140" cy="61" rx="8" ry="4"></ellipse>
+      </g>
+      <circle cx="100" cy="68" r="5" fill="#3a3358"></circle>
+      <circle cx="140" cy="68" r="5" fill="#3a3358"></circle>
+      <circle cx="102" cy="66" r="1.6" fill="#fff"></circle>
+      <circle cx="142" cy="66" r="1.6" fill="#fff"></circle>
+      <g id="blush">
+        <ellipse cx="90" cy="80" rx="8" ry="5"></ellipse>
+        <ellipse cx="150" cy="80" rx="8" ry="5"></ellipse>
+      </g>
+      <path id="lips" d="M110,87 Q120,94 130,87 Q120,92 110,87 Z"></path>
+    </g>
+
+    <g id="accArt">
+      <g id="acc-laco" style="display:none">
+        <path d="M104,17 L120,26 L104,35 Z" fill="#ff5c8a"></path>
+        <path d="M136,17 L120,26 L136,35 Z" fill="#ff5c8a"></path>
+        <circle cx="120" cy="26" r="5" fill="#e56b82"></circle>
+      </g>
+      <g id="acc-oculos" style="display:none">
+        <circle cx="100" cy="68" r="11" fill="none" stroke="#3a3358" stroke-width="3"></circle>
+        <circle cx="140" cy="68" r="11" fill="none" stroke="#3a3358" stroke-width="3"></circle>
+        <line x1="111" y1="68" x2="129" y2="68" stroke="#3a3358" stroke-width="3"></line>
+      </g>
+      <g id="acc-brincos" style="display:none">
+        <circle cx="82" cy="80" r="3.5" fill="#ffd166"></circle>
+        <circle cx="158" cy="80" r="3.5" fill="#ffd166"></circle>
+      </g>
+      <g id="acc-coroa" style="display:none">
+        <path d="M95,26 L102,9 L112,22 L120,4 L128,22 L138,9 L145,26 Z" fill="#ffd166" stroke="#e8ac2e" stroke-width="1.5"></path>
+      </g>
+    </g>
+  </svg>
+</div>
+
+<div class="cat-tabs" id="catTabs"></div>
+<div class="options-panel" id="optionsPanel"></div>
+
+<footer>Feito com carinho para a Isadora 💜 — funciona sem internet</footer>
+
+<div class="modal-bg" id="resetModal">
+  <div class="modal">
+    <h2>Recomeçar os visuais?</h2>
+    <p>Isso vai apagar as roupas, cabelos e maquiagens das 3 bonecas.</p>
+    <div class="modal-btns">
+      <button class="btn-no" id="cancelReset">Cancelar</button>
+      <button class="btn-yes" id="confirmReset">Recomeçar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var SAVE_KEY = "isadora-moda-save-v1";
+
+  var SKIN_TONES = ["#ffe0bd","#f8c99c","#e0ac69","#c68642","#8d5524"];
+  var HAIR_COLORS = ["#2b1c12","#000000","#7a4a2a","#d9a441","#e8a0c4","#8b5fbf","#4fc3f7","#e05656"];
+  var OUTFIT_COLORS = ["#ff8fa3","#ffd166","#8fe3b0","#4fc3f7","#9b6eff","#ff7ec7","#54d67b","#ffa552"];
+  var LIP_COLORS = ["transparent","#e2707a","#c0392b","#ff6f91","#a4508b"];
+  var BLUSH_COLORS = ["transparent","#ffb3ba","#ff8fa3","#ffd6cc"];
+  var SHADOW_COLORS = ["transparent","#a4508b","#8fd3f4","#c9a0ff","#ffb3ba"];
+
+  var HAIR_STYLES = [
+    {id:"liso", label:"Liso"},
+    {id:"chiquinha", label:"Chiquinha"},
+    {id:"rabo", label:"Rabo de cavalo"},
+    {id:"cacheado", label:"Cacheado"}
+  ];
+  var OUTFIT_STYLES = [
+    {id:"vestido", label:"Vestido"},
+    {id:"longo", label:"Vestido longo"},
+    {id:"macacao", label:"Macacão"}
+  ];
+  var ACCESSORIES = [
+    {id:"laco", label:"🎀 Laço"},
+    {id:"oculos", label:"🕶️ Óculos"},
+    {id:"brincos", label:"💎 Brincos"},
+    {id:"coroa", label:"👑 Coroa"}
+  ];
+
+  var CATEGORIES = [
+    {id:"pele", icon:"🧑", label:"Pele"},
+    {id:"cabelo", icon:"💇‍♀️", label:"Cabelo"},
+    {id:"roupa", icon:"👗", label:"Roupa"},
+    {id:"maquiagem", icon:"💋", label:"Rosto"},
+    {id:"acessorios", icon:"✨", label:"Extras"}
+  ];
+
+  function defaultDoll(i){
+    var presets = [
+      {skin:SKIN_TONES[0], hair:"chiquinha", hairColor:HAIR_COLORS[3], outfit:"vestido", outfitColor:OUTFIT_COLORS[0], lip:LIP_COLORS[1], blush:BLUSH_COLORS[1], shadow:SHADOW_COLORS[0]},
+      {skin:SKIN_TONES[2], hair:"cacheado", hairColor:HAIR_COLORS[0], outfit:"macacao", outfitColor:OUTFIT_COLORS[3], lip:LIP_COLORS[0], blush:BLUSH_COLORS[0], shadow:SHADOW_COLORS[0]},
+      {skin:SKIN_TONES[3], hair:"rabo", hairColor:HAIR_COLORS[2], outfit:"longo", outfitColor:OUTFIT_COLORS[4], lip:LIP_COLORS[3], blush:BLUSH_COLORS[2], shadow:SHADOW_COLORS[3]}
+    ];
+    var base = presets[i % presets.length];
+    var acc = {laco:false, oculos:false, brincos:false, coroa:false};
+    return Object.assign({}, base, {acc:acc});
+  }
+
+  function freshState(){
+    return { active:0, dolls:[defaultDoll(0), defaultDoll(1), defaultDoll(2)] };
+  }
+
+  function load(){
+    try{
+      var raw = localStorage.getItem(SAVE_KEY);
+      if (!raw) return freshState();
+      var s = JSON.parse(raw);
+      if (!s.dolls || s.dolls.length !== 3) return freshState();
+      return s;
+    }catch(e){ return freshState(); }
+  }
+
+  function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){} }
+
+  var state = load();
+  var currentCategory = "pele";
+
+  function doll(){ return state.dolls[state.active]; }
+
+  // ---------- doll rendering ----------
+  var svg = document.getElementById("dollSvg");
+  function setColor(id, color){ document.getElementById(id).style.color = color; }
+  function showOnly(groupClass, activeId){
+    document.querySelectorAll("." + groupClass).forEach(function(g){
+      g.style.display = (g.id === activeId) ? "" : "none";
+    });
+  }
+
+  function renderDoll(){
+    var d = doll();
+    setColor("skinArt", d.skin);
+    setColor("outfitArt", d.outfitColor);
+    setColor("hairArt", d.hairColor);
+    setColor("lips", d.lip);
+    setColor("blush", d.blush);
+    setColor("eyeshadow", d.shadow);
+    showOnly("hair-group", "hair-" + d.hair);
+    showOnly("outfit-group", "outfit-" + d.outfit);
+    ["laco","oculos","brincos","coroa"].forEach(function(a){
+      document.getElementById("acc-" + a).style.display = d.acc[a] ? "" : "none";
+    });
+  }
+
+  // ---------- doll tabs ----------
+  var dollTabsEl = document.getElementById("dollTabs");
+  function renderDollTabs(){
+    dollTabsEl.innerHTML = "";
+    for (var i=0;i<3;i++){
+      var btn = document.createElement("button");
+      btn.className = "doll-tab" + (i === state.active ? " active" : "");
+      btn.textContent = "Boneca " + (i+1);
+      (function(idx){
+        btn.addEventListener("click", function(){
+          state.active = idx;
+          save();
+          renderDollTabs();
+          renderDoll();
+          renderOptions();
+        });
+      })(i);
+      dollTabsEl.appendChild(btn);
+    }
+  }
+
+  // ---------- category tabs ----------
+  var catTabsEl = document.getElementById("catTabs");
+  function renderCatTabs(){
+    catTabsEl.innerHTML = "";
+    CATEGORIES.forEach(function(cat){
+      var btn = document.createElement("button");
+      btn.className = "cat-tab" + (cat.id === currentCategory ? " active" : "");
+      btn.innerHTML = cat.icon + '<span class="lbl">' + cat.label + "</span>";
+      btn.addEventListener("click", function(){
+        currentCategory = cat.id;
+        renderCatTabs();
+        renderOptions();
+      });
+      catTabsEl.appendChild(btn);
+    });
+  }
+
+  // ---------- options panel ----------
+  var panel = document.getElementById("optionsPanel");
+
+  function makeStyleRow(items, activeId, onPick){
+    var row = document.createElement("div");
+    row.className = "opt-row";
+    items.forEach(function(item){
+      var b = document.createElement("button");
+      b.className = "style-btn" + (item.id === activeId ? " active" : "");
+      b.textContent = item.label;
+      b.addEventListener("click", function(){ onPick(item.id); });
+      row.appendChild(b);
+    });
+    return row;
+  }
+
+  function makeColorRow(colors, activeColor, onPick){
+    var row = document.createElement("div");
+    row.className = "opt-row";
+    colors.forEach(function(c){
+      var b = document.createElement("button");
+      b.className = "swatch" + (c === activeColor ? " active" : "") + (c === "transparent" ? " none-swatch" : "");
+      if (c !== "transparent") b.style.background = c;
+      b.addEventListener("click", function(){ onPick(c); });
+      row.appendChild(b);
+    });
+    return row;
+  }
+
+  function label(text){
+    var l = document.createElement("div");
+    l.className = "opt-label";
+    l.textContent = text;
+    return l;
+  }
+
+  function renderOptions(){
+    var d = doll();
+    panel.innerHTML = "";
+
+    if (currentCategory === "pele"){
+      panel.appendChild(label("Cor da pele"));
+      panel.appendChild(makeColorRow(SKIN_TONES, d.skin, function(c){
+        d.skin = c; save(); renderDoll();
+      }));
+    }
+
+    if (currentCategory === "cabelo"){
+      panel.appendChild(label("Estilo"));
+      panel.appendChild(makeStyleRow(HAIR_STYLES, d.hair, function(id){
+        d.hair = id; save(); renderDoll(); renderOptions();
+      }));
+      panel.appendChild(label("Cor do cabelo"));
+      panel.appendChild(makeColorRow(HAIR_COLORS, d.hairColor, function(c){
+        d.hairColor = c; save(); renderDoll();
+      }));
+    }
+
+    if (currentCategory === "roupa"){
+      panel.appendChild(label("Estilo"));
+      panel.appendChild(makeStyleRow(OUTFIT_STYLES, d.outfit, function(id){
+        d.outfit = id; save(); renderDoll(); renderOptions();
+      }));
+      panel.appendChild(label("Cor da roupa"));
+      panel.appendChild(makeColorRow(OUTFIT_COLORS, d.outfitColor, function(c){
+        d.outfitColor = c; save(); renderDoll();
+      }));
+    }
+
+    if (currentCategory === "maquiagem"){
+      panel.appendChild(label("Batom"));
+      panel.appendChild(makeColorRow(LIP_COLORS, d.lip, function(c){
+        d.lip = c; save(); renderDoll();
+      }));
+      panel.appendChild(label("Sombra"));
+      panel.appendChild(makeColorRow(SHADOW_COLORS, d.shadow, function(c){
+        d.shadow = c; save(); renderDoll();
+      }));
+      panel.appendChild(label("Blush"));
+      panel.appendChild(makeColorRow(BLUSH_COLORS, d.blush, function(c){
+        d.blush = c; save(); renderDoll();
+      }));
+    }
+
+    if (currentCategory === "acessorios"){
+      panel.appendChild(label("Toque para adicionar ou tirar"));
+      var row = document.createElement("div");
+      row.className = "opt-row";
+      ACCESSORIES.forEach(function(a){
+        var b = document.createElement("button");
+        b.className = "style-btn" + (d.acc[a.id] ? " active" : "");
+        b.textContent = a.label;
+        b.addEventListener("click", function(){
+          d.acc[a.id] = !d.acc[a.id];
+          save(); renderDoll(); renderOptions();
+        });
+        row.appendChild(b);
+      });
+      panel.appendChild(row);
+    }
+  }
+
+  // ---------- random ----------
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  document.getElementById("diceBtn").addEventListener("click", function(){
+    var d = doll();
+    d.skin = pick(SKIN_TONES);
+    d.hair = pick(HAIR_STYLES).id;
+    d.hairColor = pick(HAIR_COLORS);
+    d.outfit = pick(OUTFIT_STYLES).id;
+    d.outfitColor = pick(OUTFIT_COLORS);
+    d.lip = pick(LIP_COLORS);
+    d.blush = pick(BLUSH_COLORS);
+    d.shadow = pick(SHADOW_COLORS);
+    ["laco","oculos","brincos","coroa"].forEach(function(a){ d.acc[a] = Math.random() > 0.5; });
+    save(); renderDoll(); renderOptions();
+  });
+
+  // ---------- reset ----------
+  var resetModal = document.getElementById("resetModal");
+  document.getElementById("settingsBtn").addEventListener("click", function(){ resetModal.classList.add("show"); });
+  document.getElementById("cancelReset").addEventListener("click", function(){ resetModal.classList.remove("show"); });
+  document.getElementById("confirmReset").addEventListener("click", function(){
+    state = freshState();
+    save();
+    renderDollTabs(); renderDoll(); renderOptions();
+    resetModal.classList.remove("show");
+  });
+
+  // ---------- boot ----------
+  renderDollTabs();
+  renderCatTabs();
+  renderDoll();
+  renderOptions();
+})();
+</script>
+</body>
+</html>
